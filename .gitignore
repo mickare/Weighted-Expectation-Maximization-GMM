@@ -1,0 +1,9 @@
+
+# Ignore PyCharm
+.idea
+venv/
+
+# Ignore python stuff
+__pycache__/
+*.py[cod]
+*$py.class

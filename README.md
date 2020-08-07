@@ -22,22 +22,32 @@ The expectation step is not changed:
 
 ![sigma](img/img_gamma.png)
 
-## Short version
+## Summary
 - KMeans with random point initialization
 - Low Max-Iterations (default: 5)
 - Low count of training points (default: 20).
 - Comparison and reference of EM implementation in OpenCV
-    - Replication points to add prior probability knowledge to default EM-Algorithm
 
-## What can be observed?
+## Usage
+
+- Run:    `./main.py` 
+- Store:  `./main.py --save test.json`
+- Replay: `./main.py --load test.json`
+
+
+- Run large test: `./compare.py`
+
+### What can be observed?
 More information is used to approximate the incomplete data.
 It shows slightly better results than the reference algorithm,
-especially in a sparse sampled environment; without inflating the
-sampled data with replicates (less overhead).
+especially in a sparse sampled environment.
+
+But keep in mind that with a low iteration count
+the initial guess via K-Means plays a big role.
 
 #### Example 1
 `Initial` is the desired distribution that was used to sample the red dots.
-`OpenCV-EM` is the reference algorithm by OpenCV with the sample replication.
+`OpenCV-EM` is the reference algorithm by OpenCV.
 `Weighted-EM` is the enhancement by using the probabilities in normalization.
 ![sigma](img/plot_example.1.png)
 
