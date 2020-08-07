@@ -14,9 +14,8 @@ from em.em_opencv import OpenCvEM
 from em.gmm import NormalDist, GMM
 
 
-def sample_random(gmm: GMM, count: int, bound: Bound):
+def sample_uniform(gmm: GMM, count: int, bound: Bound):
     pos = bound.random(count)
-    print(pos.shape)
     pdf = gmm.pdf(pos)
     return pos, pdf
 
@@ -43,11 +42,11 @@ def plot_samples(ax: pyplot.Axes, gmm: GMM, size: Vec2f,
 
 def compare_main():
     default_n_cluster = 2
-    default_sample_count = 20
+    default_sample_count = default_n_cluster * 20
     default_max_iter = 5
 
     parser = ArgumentParser()
-    parser.add_argument("-n", "--ncluster", dest="ncluster", type=int, default=default_n_cluster,
+    parser.add_argument("-c", "--cluster", dest="cluster", type=int, default=default_n_cluster,
                         help="Number of clusters / gmms to detect.")
     parser.add_argument("-s", "--samples", dest="samples", type=int, default=default_sample_count,
                         help="Number of samples to train the GMM with EM")
@@ -57,7 +56,7 @@ def compare_main():
     parser.add_argument("--load", type=str, help="Load the initial gmm from file")
     args = parser.parse_args()
 
-    n_cluster = args.ncluster
+    n_cluster = args.cluster
     sample_count = args.samples
     max_iter = args.maxiter
 
@@ -91,8 +90,12 @@ def compare_main():
           f"\tsamples:  {sample_count}\n"
           f"\tmax_iter: {max_iter}")
 
-    # sample_pos, sample_pdf = sample_random(gmm_initial, sample_count, bound)
-    sample_pos, sample_pdf = sample_rv(gmm_initial, sample_count, bound)
+    # Mix uniform and rv samples
+    count_half = sample_count // 2
+    sample_pos0, sample_pdf0 = sample_uniform(gmm_initial, count_half, bound)
+    sample_pos1, sample_pdf1 = sample_rv(gmm_initial, sample_count - count_half, bound)
+    sample_pos = np.concatenate((sample_pos0, sample_pos1), axis=0)
+    sample_pdf = np.concatenate((sample_pdf0, sample_pdf1), axis=0)
 
     cv_em = OpenCvEM(n_cluster, max_iter)
     wh_em = WeightedEM(n_cluster, max_iter)
