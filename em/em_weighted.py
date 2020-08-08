@@ -83,7 +83,7 @@ class WeightedEmTrainer:
         gamma_probs = gammas * self.prob
         gamma_probs_sum = np.sum(gamma_probs, axis=1)
 
-        phis = gamma_probs_sum / np.sum(self.prob)
+        phis = gamma_probs_sum
         self.phis = phis / np.sum(phis)
 
         self.means = [np.sum(gp * self.points.T, axis=1) / gps for gp, gps in zip(gamma_probs, gamma_probs_sum)]

@@ -7,11 +7,11 @@ import numpy as np
 from matplotlib import pyplot
 from scipy.special import rel_entr
 
-from mathlib.vector import Vec2f, Vec2fArray
 from em.bound import Bound
-from em.em_weighted import WeightedEM
 from em.em_opencv import OpenCvEM
+from em.em_weighted import WeightedEM
 from em.gmm import NormalDist, GMM
+from mathlib.vector import Vec2f, Vec2fArray
 
 
 def sample_uniform(gmm: GMM, count: int, bound: Bound):
