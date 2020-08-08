@@ -97,12 +97,12 @@ def compare_main():
     sample_pos = np.concatenate((sample_pos0, sample_pos1), axis=0)
     sample_pdf = np.concatenate((sample_pdf0, sample_pdf1), axis=0)
 
-    cv_em = OpenCvEM(n_cluster, max_iter)
+    cv_em = OpenCvEM(n_cluster, max_iter, replication_factor=2)
     wh_em = WeightedEM(n_cluster, max_iter)
     gmms = [
         ('CV-EM', cv_em.compute(sample_pos, sample_pdf)),
         ('WH-EM', wh_em.compute(sample_pos, sample_pdf)),
-        ('WH-EM-sqrt', wh_em.compute(sample_pos, np.sqrt(sample_pdf)))
+        ('WH-EM-sqrt', wh_em.compute(sample_pos, (sample_pdf ** (1 / 2))))
     ]
 
     def relative_entropy():

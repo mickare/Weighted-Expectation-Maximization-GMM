@@ -14,14 +14,18 @@ from em.gmm import GMM, NormalDist
 
 
 class OpenCvEM(EM):
-    def __init__(self, ncluster: int, max_iter: int, epsilon: float = 0.0):
+    def __init__(self, ncluster: int, max_iter: int, epsilon: float = 0.0,
+                 replication_factor: float = 2.0):
         self.ncluster = ncluster
         self.max_iter = max_iter
         self.epsilon = epsilon
+        self.replication_factor = replication_factor
 
     def compute(self, points: Vec2fArray, prob: FloatArray) -> GMM:
-        samples = np.array(points, dtype=np.float32)
-        probs = np.array([prob] * self.ncluster, dtype=np.float32)
+        samples_count = int(np.ceil(len(points) * self.replication_factor))
+        samples_id = np.random.choice(len(points), samples_count, replace=True, p=prob / np.sum(prob))
+        samples = np.float32(points[samples_id])
+        probs = np.array([prob[samples_id]] * self.ncluster, dtype=np.float32)
 
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, self.max_iter, self.epsilon)
         em: cv2.ml_EM = cv2.ml.EM_create()
