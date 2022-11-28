@@ -78,7 +78,7 @@ class GMM:
                 'weights': np.array(self.weights).tolist()}
 
     def pdf(self, x, **kwargs):
-        return np.sum([norm.pdf(x, **kwargs) * w for norm, w in zip(self.normals, self.weights)], axis=0)
+        return np.sum([norm.pdf(x, **kwargs) * w for norm, w in zip(self.normals, self.weights) if w > 0], axis=0)
 
     def _sample_ids(self, size):
         return np.random.choice(len(self.weights), size, replace=True, p=self.weights)

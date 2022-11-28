@@ -52,6 +52,8 @@ def compare_main():
                         help="Number of samples to train the GMM with EM")
     parser.add_argument("-I", "--maxiter", dest="maxiter", type=int, default=default_max_iter,
                         help="Number of maximum iterations of EM steps")
+    parser.add_argument("--cv-supersample", dest="supersample", type=int, default=10,
+                        help="Factor to duplicate the samples to add probability to the default OpenCV EM training")
     parser.add_argument("--save", type=str, help="Save the initial gmm to file")
     parser.add_argument("--load", type=str, help="Load the initial gmm from file")
     args = parser.parse_args()
@@ -97,7 +99,7 @@ def compare_main():
     sample_pos = np.concatenate((sample_pos0, sample_pos1), axis=0)
     sample_pdf = np.concatenate((sample_pdf0, sample_pdf1), axis=0)
 
-    cv_em = OpenCvEM(n_cluster, max_iter, replication_factor=2)
+    cv_em = OpenCvEM(n_cluster, max_iter, replication_factor=args.supersample)
     wh_em = WeightedEM(n_cluster, max_iter)
     gmms = [
         ('CV-EM', cv_em.compute(sample_pos, sample_pdf)),

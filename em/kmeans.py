@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Union, Sequence, Optional
+from typing import Iterator, Union, Sequence, Optional, Callable
 
 import numpy as np
 
@@ -15,14 +15,18 @@ class KMeansInit(ABC):
         ...
 
 
+KMeansInitFunc = Callable[[int, Vec2fArray, FloatArray], Vec2fArray]
+
+
 class KMeans:
-    def __init__(self, nCluster: int, initial: Optional[KMeansInit] = None):
+    def __init__(self, nCluster: int, initial: Optional[KMeansInitFunc] = None):
         assert nCluster > 0
         self.nCluster = nCluster
-        self.initializer: KMeansInit = initial or RandomKMeansInit()
+        self.initializer: KMeansInitFunc = initial or RandomKMeansInit()
 
-    def mean_weighted(self, data: Vec2fArray, weights: FloatArray, cluster: ClusterIdArray) -> Iterator[Vec2f]:
-        for c in range(0, self.nCluster):
+    @classmethod
+    def mean_weighted(cls, data: Vec2fArray, weights: FloatArray, cluster: ClusterIdArray, nCluster) -> Iterator[Vec2f]:
+        for c in range(0, nCluster):
             sel = cluster == c
             w = weights[sel]
             yield np.sum((data[sel].T * w).T, axis=0) / np.sum(w)
@@ -35,12 +39,23 @@ class KMeans:
     def __call__(self, data: Vec2fArray, weights: FloatArray, max_steps: int = 10, epsilon: float = 1e-5):
         assert max_steps > 0
         assert len(data) > self.nCluster
-        centroids = self.initializer(self.nCluster, data, weights)
+
+        # Take n+1 initial centroids
+        # +1, so we can break any equilibrium that may occur
+        centroids = self.initializer(self.nCluster + 1, data, weights)
+        assert len(centroids) == self.nCluster + 1
+
+        # Cluster n+1
+        cluster = self._assign_cluster(data, weights, centroids)
+        # Remove the additional one
+        centroids = np.array(list(self.mean_weighted(data, weights, cluster, self.nCluster + 1)))[:-1]
         assert len(centroids) == self.nCluster
+
+        # Keep going with n clusters
         cluster = self._assign_cluster(data, weights, centroids)
         for s in range(0, max_steps):
             centroids_old = centroids
-            centroids = np.array(list(self.mean_weighted(data, weights, cluster)))
+            centroids = np.array(list(self.mean_weighted(data, weights, cluster, self.nCluster)))
             cluster = self._assign_cluster(data, weights, centroids)
             if np.linalg.norm(centroids - centroids_old) < epsilon:
                 break

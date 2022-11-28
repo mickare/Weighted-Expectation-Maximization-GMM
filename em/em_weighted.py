@@ -58,7 +58,7 @@ class WeightedEmTrainer:
         return [NormalDist(mean=m, cov=c) for m, c in zip(self.means, self.covs)]
 
     def gmm(self) -> GMM:
-        return GMM(self.normals())
+        return GMM(self.normals(), weights=self.phis)
 
     def _step_expectation(self) -> np.ndarray:
         """Expectation step"""
@@ -76,7 +76,7 @@ class WeightedEmTrainer:
         gammas /= gammas_denom
         return gammas
 
-    def _step_maximization(self, gammas: np.ndarray, rate: float = 1.0):
+    def _step_maximization1(self, gammas: np.ndarray):
         assert gammas.shape[1] == len(self.points)
 
         """Maximization step"""
@@ -94,11 +94,32 @@ class WeightedEmTrainer:
             for mean, gp, gp_sum in zip(self.means, gamma_probs, gamma_probs_sum)
         ]
 
-    def step(self, rate: float = 0.9):
+    def _step_maximization2(self, gammas: np.ndarray):
+        # gammas_norm = gammas * self.prob
+        # gammas_norm /= np.sum(gammas_norm, axis=1)[:, None]
+        # self.phis = np.sum(gammas, axis=1) / np.sum(gammas)
+
+        gammas_norm = gammas * self.prob
+        gammas_norm_denom = np.sum(gammas_norm, axis=1)
+        gammas_norm[gammas_norm_denom != 0] /= gammas_norm_denom[gammas_norm_denom != 0, None]
+
+        self.phis = np.sum(gammas_norm, axis=1) / np.sum(gammas_norm)
+
+        self.means = [np.sum(gp * self.points.T, axis=1) for gp in zip(gammas_norm)]
+
+        self.covs = [
+            (np.sum([gnx * np.outer(dx, dx) for dx, gnx in zip(self.points - mean, gn)], axis=0))
+            for mean, gn in zip(self.means, gammas_norm)
+        ]
+
+    def _step_maximization(self, gammas: np.ndarray):
+        self._step_maximization2(gammas)
+
+    def step(self):
         # Expectation step
         gammas = self._step_expectation()
 
         # Maximization step
-        self._step_maximization(gammas, rate)
+        self._step_maximization(gammas)
 
         self.steps += 1
